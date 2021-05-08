@@ -4,23 +4,25 @@ from skimage.util import random_noise
 from keras import Model, Input
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, BatchNormalization, Activation, InputLayer, UpSampling2D, UpSampling3D
-from keras.layers.convolutional import Conv2D, Conv3D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers import Dense, Flatten, LSTM, TimeDistributed
+
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-from skimage.color import rgb2lab, lab2rgb, rgb2gray, xyz2lab
 from skimage.io import imsave
 import tensorflow as tf
 
 def get_model(upscale_factor=2, channels=3):
     conv_args = {
         "activation": "relu",
-        "kernel_initializer": "Orthogonal",
         "padding": "same",
     }
     inputs = Input(shape=(None, None, channels))
     x = Conv2D(16, (3, 3), **conv_args)(inputs)
-    x = Conv2D(32, (3, 3), **conv_args)(inputs)
+    x = Conv2D(32, (3, 3), **conv_args)(x)
+    # x = MaxPooling2D((2, 2), padding='same')(x)
     x = Conv2D(64, (3, 3), **conv_args)(x)
     x = Conv2D(64, (3, 3), **conv_args)(x)
+    # x = UpSampling2D((2, 2))(x)
     x = Conv2D(128, (3, 3), **conv_args)(x)
     x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
     outputs = tf.nn.depth_to_space(x, upscale_factor)
@@ -33,6 +35,8 @@ high_res = cv2.resize(img, dsize=(512, 512), interpolation=cv2.INTER_AREA)
 # Input
 low_res = cv2.resize(img, dsize=(256, 256), interpolation=cv2.INTER_AREA)
 low_res_noise = random_noise(low_res, mode='s&p', amount=0.01)
+# OpenCV prediction - just doubling image
+low_res_res = cv2.resize(low_res, dsize=(512, 512), interpolation=cv2.INTER_AREA)
 
 X = low_res_noise.reshape(1, 256, 256, 3)
 Y = high_res.reshape(1, 512, 512, 3) / 255.0
@@ -53,5 +57,6 @@ prediction = out.clip(0, 255).astype(np.uint8)
 cv2.imshow('image before', low_res_noise)
 cv2.imshow('image desired', high_res)
 cv2.imshow('image predicted', prediction)
+cv2.imshow('opencv prediction', low_res_res)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

@@ -2,3 +2,4 @@
 .virtual
 .images
 .preprocessed_images
+*.jpg
