@@ -17,9 +17,11 @@ def get_model(upscale_factor=2, channels=3):
         "padding": "same",
     }
     inputs = Input(shape=(None, None, channels))
-    x = Conv2D(64, 5, **conv_args)(inputs)
-    x = Conv2D(64, 3, **conv_args)(x)
-    x = Conv2D(32, 3, **conv_args)(x)
+    x = Conv2D(16, (3, 3), **conv_args)(inputs)
+    x = Conv2D(32, (3, 3), **conv_args)(inputs)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(128, (3, 3), **conv_args)(x)
     x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
     outputs = tf.nn.depth_to_space(x, upscale_factor)
 
@@ -53,5 +55,3 @@ cv2.imshow('image desired', high_res)
 cv2.imshow('image predicted', prediction)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-
