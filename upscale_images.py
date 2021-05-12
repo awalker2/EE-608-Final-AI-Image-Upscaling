@@ -2,10 +2,8 @@ import cv2
 import numpy as np
 from skimage.util import random_noise
 from keras import Model, Input
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten, BatchNormalization, Activation, InputLayer, UpSampling2D, UpSampling3D
+from keras.layers import UpSampling2D
 from keras.layers.convolutional import Conv2D, MaxPooling2D
-from keras.layers import Dense, Flatten, LSTM, TimeDistributed
 import tensorflow as tf
 
 def show_images(x_rgb, y_rgb, test_opencv_rgb, index):
@@ -19,8 +17,7 @@ def get_mse(x, y):
     b = y.flatten()
     return ((a - b)**2).mean()
 
-
-def get_model(upscale_factor=2, channels=3):
+def get_model_max_pooling(upscale_factor=2, channels=3):
     conv_args = {
         "activation": "relu",
         "padding": "same",
@@ -28,15 +25,61 @@ def get_model(upscale_factor=2, channels=3):
     inputs = Input(shape=(None, None, channels))
     x = Conv2D(16, (3, 3), **conv_args)(inputs)
     x = Conv2D(32, (3, 3), **conv_args)(x)
-    # x = MaxPooling2D((2, 2), padding='same')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
     x = Conv2D(64, (3, 3), **conv_args)(x)
     x = Conv2D(64, (3, 3), **conv_args)(x)
-    # x = UpSampling2D((2, 2))(x)
+    x = UpSampling2D((2, 2))(x)
     x = Conv2D(128, (3, 3), **conv_args)(x)
     x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
     outputs = tf.nn.depth_to_space(x, upscale_factor)
 
     return Model(inputs, outputs)
+
+def get_model_base(upscale_factor=2, channels=3):
+    conv_args = {
+        "activation": "relu",
+        "padding": "same",
+    }
+    inputs = Input(shape=(None, None, channels))
+    x = Conv2D(16, (3, 3), **conv_args)(inputs)
+    x = Conv2D(32, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(128, (3, 3), **conv_args)(x)
+    x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
+    outputs = tf.nn.depth_to_space(x, upscale_factor)
+
+    return Model(inputs, outputs)
+
+def get_model_simplier(upscale_factor=2, channels=3):
+    conv_args = {
+        "activation": "relu",
+        "padding": "same",
+    }
+    inputs = Input(shape=(None, None, channels))
+    x = Conv2D(32, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(128, (3, 3), **conv_args)(x)
+    x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
+    outputs = tf.nn.depth_to_space(x, upscale_factor)
+
+    return Model(inputs, outputs)
+
+def get_model_more_complex(upscale_factor=2, channels=3):
+    conv_args = {
+        "activation": "relu",
+        "padding": "same",
+    }
+    inputs = Input(shape=(None, None, channels))
+    x = Conv2D(16, (3, 3), **conv_args)(inputs)
+    x = Conv2D(16, (3, 3), **conv_args)(inputs)
+    x = Conv2D(32, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(64, (3, 3), **conv_args)(x)
+    x = Conv2D(128, (3, 3), **conv_args)(x)
+    x = Conv2D(256, (3, 3), **conv_args)(x)
+    x = Conv2D(channels * (upscale_factor ** 2), 3, **conv_args)(x)
+    outputs = tf.nn.depth_to_space(x, upscale_factor)
 
 def get_dataset(num_samples, noise_amount, orig_size, low_size, color_channels):
     # Initialize np array first, then reassign for better performance
@@ -69,7 +112,7 @@ batch_size = 25
 epochs = 100
 
 x, y, test_opencv = get_dataset(num_samples, noise_amount, orig_size, low_size, color_channels)
-model = get_model(upscale_factor, color_channels)
+model = get_model_base(upscale_factor, color_channels)
 
 # Finish model
 model.compile(optimizer='rmsprop',loss='mse')
