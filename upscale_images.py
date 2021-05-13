@@ -6,7 +6,7 @@ from keras.layers import UpSampling2D
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 import tensorflow as tf
 
-def show_images(x_rgb, y_rgb, test_opencv_rgb, index):
+def show_images(x_rgb, y_rgb, test_opencv_rgb, out_rgb, index):
     cv2.imshow('Image Before: ' + str(index), x_rgb[index])
     cv2.imshow('Image Desired: ' + str(index), y_rgb[index])
     cv2.imshow('Image Predicted: ' + str(index), out_rgb[index])
@@ -99,6 +99,29 @@ def get_dataset(num_samples, noise_amount, orig_size, low_size, color_channels):
         test_opencv[i-1] = img_low_res_upscaled_test
     return x, y, test_opencv
 
+def run_model(model, batch_size, epochs, x, y, test_opencv, open_images=False):
+    # Finish model
+    model.compile(optimizer='rmsprop',loss='mse')
+    # Train the neural network
+    model.fit(x=x, y=y, batch_size=batch_size, epochs=epochs)
+    # Process model out back to np.uint8 type - round to nearest ints
+    out = model.predict(x) * 255.0
+    out_rgb = out.clip(0, 255).astype(np.uint8)
+    y_rgb = np.rint((y * 255.0)).astype(np.uint8)
+    x_rgb = np.rint((x * 255.0)).astype(np.uint8)
+    test_opencv_rgb = np.rint((test_opencv * 255.0)).astype(np.uint8)
+
+    # Get metrics from model
+    print('MSE of Model (Train): ' + str(get_mse(y_rgb, out_rgb)))
+    print('MSE of OpenCV Simple Resize: ' + str(get_mse(y_rgb, test_opencv_rgb)))
+
+    if (open_images):
+        # Show Example Images
+        show_images(x_rgb, y_rgb, test_opencv_rgb, 0)
+        show_images(x_rgb, y_rgb, test_opencv_rgb, 100)
+        show_images(x_rgb, y_rgb, test_opencv_rgb, 150)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 # Image params
 noise_amount = 0.0005
@@ -109,28 +132,44 @@ color_channels = 3
 # Model params
 num_samples = 200
 batch_size = 25
-epochs = 100
+epochs = 5
 
 x, y, test_opencv = get_dataset(num_samples, noise_amount, orig_size, low_size, color_channels)
-model = get_model_base(upscale_factor, color_channels)
+model_base = get_model_base(upscale_factor, color_channels)
+run_model(model_base, batch_size, epochs, x, y, test_opencv, True)
 
-# Finish model
-model.compile(optimizer='rmsprop',loss='mse')
-# Train the neural network
-model.fit(x=x, y=y, batch_size=batch_size, epochs=epochs)
-# Process model out back to np.uint8 type
-out = model.predict(x) * 255.0
-out_rgb = out.clip(0, 255).astype(np.uint8)
-y_rgb = (y * 255.0).astype(np.uint8)
-x_rgb = (x * 255.0).astype(np.uint8)
-test_opencv_rgb = (test_opencv * 255.0).astype(np.uint8)
 
-# Get metrics from model
-print('MSE of Model: ' + str(get_mse(y_rgb, out_rgb)))
-print('MSE of OpenCV Simple Resize: ' + str(get_mse(y_rgb, test_opencv_rgb)))
+# # Image params
+# noise_amount = 0.0005
+# upscale_factor = 2
+# orig_size = 512
+# low_size = 256
+# color_channels = 3
+# # Model params
+# num_samples = 200
+# batch_size = 25
+# epochs = 100
 
-# Show Example Images
-show_images(x_rgb, y_rgb, test_opencv_rgb, 0)
-show_images(x_rgb, y_rgb, test_opencv_rgb, 10)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+# x, y, test_opencv = get_dataset(num_samples, noise_amount, orig_size, low_size, color_channels)
+# model = get_model_base(upscale_factor, color_channels)
+
+# # Finish model
+# model.compile(optimizer='rmsprop',loss='mse')
+# # Train the neural network
+# model.fit(x=x, y=y, batch_size=batch_size, epochs=epochs)
+# # Process model out back to np.uint8 type
+# out = model.predict(x) * 255.0
+# out_rgb = out.clip(0, 255).astype(np.uint8)
+# y_rgb = (y * 255.0).astype(np.uint8)
+# x_rgb = (x * 255.0).astype(np.uint8)
+# test_opencv_rgb = (test_opencv * 255.0).astype(np.uint8)
+
+# # Get metrics from model
+# print('MSE of Model: ' + str(get_mse(y_rgb, out_rgb)))
+# print('MSE of OpenCV Simple Resize: ' + str(get_mse(y_rgb, test_opencv_rgb)))
+
+# # Show Example Images
+# show_images(x_rgb, y_rgb, test_opencv_rgb, 0)
+# show_images(x_rgb, y_rgb, test_opencv_rgb, 10)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
