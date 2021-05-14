@@ -43,7 +43,7 @@ def show_images(x_rgb, y_rgb, out_rgb, opencv_rgb, index, test_or_train):
 def get_mse(x, y):
     a = x.flatten()
     b = y.flatten()
-    return ((a - b)**2).mean()
+    return (np.square(a - b).mean())
 
 def get_model_base(upscale_factor=2, channels=3):
     conv_args = {
@@ -111,20 +111,25 @@ def run_model(model, batch_size, epochs, optimizer, x_train, y_train, x_test, y_
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-# Image params
-noise_amount = 0.0005
-upscale_factor = 2
-orig_size = 512
-low_size = 256
-color_channels = 3
-# Model params
-num_samples = 200
-batch_size = 20
-train_size = 160
-test_size = 40
-epochs = 5
-optimzer = 'rmsprop'
 
-x_train, y_train, x_test, y_test, opencv_test, opencv_train = get_dataset(num_samples, train_size, test_size, noise_amount, orig_size, low_size, color_channels)
-model_base = get_model_base(upscale_factor, color_channels)
-run_model(model_base, batch_size, epochs, optimzer, x_train, y_train, x_test, y_test, opencv_test, opencv_train)
+a =  np.array([[1, 1, 3], [4, 5, 6]])
+b =  np.array([[1, 2, 3], [4, 5, 0]])
+get_mse(a, b)
+
+# # Image params
+# noise_amount = 0.0005
+# upscale_factor = 2
+# orig_size = 512
+# low_size = 256
+# color_channels = 3
+# # Model params
+# num_samples = 200
+# batch_size = 20
+# train_size = 160
+# test_size = 40
+# epochs = 5
+# optimzer = 'rmsprop'
+
+# x_train, y_train, x_test, y_test, opencv_test, opencv_train = get_dataset(num_samples, train_size, test_size, noise_amount, orig_size, low_size, color_channels)
+# model_base = get_model_base(upscale_factor, color_channels)
+# run_model(model_base, batch_size, epochs, optimzer, x_train, y_train, x_test, y_test, opencv_test, opencv_train)
