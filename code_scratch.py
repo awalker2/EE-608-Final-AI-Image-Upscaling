@@ -17,7 +17,7 @@ def get_dataset(num_samples, train_size, test_size, noise_amount, orig_size, low
         img_orig = cv2.imread(f'preprocessed_images/{str(i)}.jpg')
         img_low_res = cv2.resize(img_orig, dsize=(low_size, low_size), interpolation=cv2.INTER_AREA)
         img_low_res_noise = random_noise(img_low_res, mode='s&p', amount=noise_amount)
-        img_low_res_upscaled_test = cv2.resize(img_low_res_noise, dsize=(orig_size, orig_size), interpolation=cv2.INTER_AREA)
+        img_low_res_upscaled_test = cv2.resize(img_low_res_noise, dsize=(orig_size, orig_size))
 
         # Adding the noise resizes the rgb values to 0-1
         x[i-1] = img_low_res_noise
@@ -96,8 +96,8 @@ def run_model(model, batch_size, epochs, optimizer, x_train, y_train, x_test, y_
     y_rgb_test = np.rint((y_test * 255.0)).astype(np.uint8)
     x_rgb_test = np.rint((x_test * 255.0)).astype(np.uint8)
     
-    opencv_rgb_train = np.rint((test_opencv * 255.0)).astype(np.uint8)
-    opencv_rgb_test = np.rint((test_opencv * 255.0)).astype(np.uint8)
+    opencv_rgb_train = np.rint((opencv_train * 255.0)).astype(np.uint8)
+    opencv_rgb_test = np.rint((opencv_test * 255.0)).astype(np.uint8)
 
     # Get metrics from model
     print('MSE of Model (Train): ' + str(get_mse(y_rgb_train, out_rgb_train)))
@@ -111,25 +111,20 @@ def run_model(model, batch_size, epochs, optimizer, x_train, y_train, x_test, y_
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+# Image params
+noise_amount = 0.0005
+upscale_factor = 2
+orig_size = 512
+low_size = 256
+color_channels = 3
+# Model params
+num_samples = 200
+batch_size = 20
+train_size = 160
+test_size = 40
+epochs = 5
+optimzer = 'rmsprop'
 
-a =  np.array([[1, 1, 3], [4, 5, 6]])
-b =  np.array([[1, 2, 3], [4, 5, 0]])
-get_mse(a, b)
-
-# # Image params
-# noise_amount = 0.0005
-# upscale_factor = 2
-# orig_size = 512
-# low_size = 256
-# color_channels = 3
-# # Model params
-# num_samples = 200
-# batch_size = 20
-# train_size = 160
-# test_size = 40
-# epochs = 5
-# optimzer = 'rmsprop'
-
-# x_train, y_train, x_test, y_test, opencv_test, opencv_train = get_dataset(num_samples, train_size, test_size, noise_amount, orig_size, low_size, color_channels)
-# model_base = get_model_base(upscale_factor, color_channels)
-# run_model(model_base, batch_size, epochs, optimzer, x_train, y_train, x_test, y_test, opencv_test, opencv_train)
+x_train, y_train, x_test, y_test, opencv_test, opencv_train = get_dataset(num_samples, train_size, test_size, noise_amount, orig_size, low_size, color_channels)
+model_base = get_model_base(upscale_factor, color_channels)
+run_model(model_base, batch_size, epochs, optimzer, x_train, y_train, x_test, y_test, opencv_test, opencv_train)
